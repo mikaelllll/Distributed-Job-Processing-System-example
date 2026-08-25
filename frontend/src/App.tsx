@@ -1,0 +1,73 @@
+import { FormEvent, useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Activity, ArrowRight, BarChart3, Boxes, Gauge, Github, Play, Radio, Server, Square } from 'lucide-react'
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Link, NavLink, Route, Routes, useNavigate, useParams } from 'react-router-dom'
+import { api } from './api'
+import { compact, detectBottleneck, EmptyState, MetricCard, number, StatusBadge } from './components'
+import { useRunMetrics } from './hooks'
+import type { Metrics, RunCreate } from './types'
+
+function Shell() {
+  return <div className="shell">
+    <header><Link className="brand" to="/"><span><Boxes size={21} /></span><div>DISPATCH<small>JOB OBSERVATORY</small></div></Link>
+      <nav><NavLink to="/">Overview</NavLink><NavLink to="/new">New benchmark</NavLink></nav>
+      <a className="github" href="https://github.com/mikaelllll/Distributed-Job-Processing-System-example" target="_blank" rel="noreferrer"><Github size={18} /> Source</a>
+    </header>
+    <main><Routes><Route path="/" element={<Overview />} /><Route path="/new" element={<CreateRun />} /><Route path="/runs/:id" element={<RunView />} /></Routes></main>
+    <footer>Built to make distributed systems observable. <span>FastAPI · RabbitMQ · Redis · PostgreSQL · React</span></footer>
+  </div>
+}
+
+function Overview() {
+  const { data: runs = [], isLoading } = useQuery({ queryKey: ['runs'], queryFn: api.listRuns, refetchInterval: 5000 })
+  const active = runs.filter((run) => ['pending', 'producing', 'running'].includes(run.status))
+  const completed = runs.filter((run) => run.status === 'completed')
+  return <>
+    <section className="hero"><div><span className="eyebrow"><Radio size={14} /> Distributed systems, made visible</span><h1>Watch work move.<br/><em>Find what slows it down.</em></h1><p>Generate controlled workloads, distribute them across asynchronous workers, and inspect throughput, latency, failures, and bottlenecks as they happen.</p><div className="hero-actions"><Link className="button primary" to="/new"><Play size={17} /> Run a benchmark</Link><a className="button ghost" href="#runs">View history <ArrowRight size={17} /></a></div></div><div className="system-map"><div className="map-node client">LOAD GENERATOR</div><ArrowRight/><div className="map-node broker">RABBITMQ<small>durable queue</small></div><div className="worker-row"><div>W1</div><div>W2</div><div>W3</div></div><div className="map-stats"><span><i className="green"/> AT-LEAST-ONCE</span><span><i/> LIVE METRICS</span></div></div></section>
+    <section className="summary-grid"><MetricCard label="Total runs" value={runs.length} detail="Recorded benchmarks"/><MetricCard label="Active now" value={active.length} detail="Producing or processing" tone="green"/><MetricCard label="Completed" value={completed.length} detail="Final reports available" tone="purple"/><MetricCard label="Largest run" value={compact.format(Math.max(0, ...runs.map(r => r.job_count)))} detail="Logical jobs" tone="orange"/></section>
+    <section id="runs" className="panel"><div className="section-heading"><div><span className="eyebrow">Benchmark history</span><h2>Recent runs</h2></div><Link className="button small" to="/new">New run</Link></div>
+      {isLoading ? <div className="empty">Loading runs…</div> : runs.length === 0 ? <EmptyState>No benchmarks yet. Create the first workload to see the system in action.</EmptyState> : <div className="table-wrap"><table><thead><tr><th>Run</th><th>Status</th><th>Mode</th><th>Jobs</th><th>Workload</th><th>Created</th><th/></tr></thead><tbody>{runs.map(run => <tr key={run.id}><td><strong>{run.name}</strong><small>{run.id.slice(0, 8)}</small></td><td><StatusBadge status={run.status}/></td><td>{run.mode}</td><td>{number.format(run.job_count)}</td><td>{run.workload.replace('_', ' ')}</td><td>{new Date(run.created_at).toLocaleString()}</td><td><Link to={`/runs/${run.id}`}>Inspect <ArrowRight size={14}/></Link></td></tr>)}</tbody></table></div>}
+    </section>
+  </>
+}
+
+function CreateRun() {
+  const navigate = useNavigate()
+  const [form, setForm] = useState<RunCreate>({ name: 'Throughput benchmark', job_count: 10_000, mode: 'benchmark', producer_concurrency: 20, target_rate: 5000, workload: 'io_light', duration_ms: 25, failure_probability: 0.01, max_retries: 3 })
+  const mutation = useMutation({ mutationFn: api.createRun, onSuccess: run => navigate(`/runs/${run.id}`) })
+  const update = (key: keyof RunCreate, value: string | number | null) => setForm(current => ({ ...current, [key]: value }))
+  const submit = (event: FormEvent) => { event.preventDefault(); mutation.mutate(form) }
+  return <section className="create-layout"><div className="page-title"><span className="eyebrow">Controlled experiment</span><h1>Configure benchmark</h1><p>Create a reproducible workload. The browser sends one command; the dedicated generator publishes jobs at the configured rate.</p></div><form className="config-panel" onSubmit={submit}>
+    <fieldset><legend>Run identity</legend><label>Benchmark name<input value={form.name} onChange={e => update('name', e.target.value)} required maxLength={120}/></label></fieldset>
+    <fieldset><legend>Scale</legend><label>Number of logical jobs<div className="presets">{[10_000,100_000,1_000_000,100_000_000].map(value => <button type="button" className={form.job_count === value ? 'selected' : ''} onClick={() => { update('job_count', value); if (value > 1_000_000) update('mode', 'simulation') }} key={value}>{compact.format(value)}</button>)}</div><input type="number" min="1" max="100000000" value={form.job_count} onChange={e => update('job_count', Number(e.target.value))}/></label><div className="form-grid"><label>Execution mode<select value={form.mode} onChange={e => update('mode', e.target.value)}><option value="audit">Audit — detailed</option><option value="benchmark">Benchmark — aggregated</option><option value="simulation">Simulation — extreme scale</option></select></label><label>Producer concurrency<input type="number" min="1" max="500" value={form.producer_concurrency} onChange={e => update('producer_concurrency', Number(e.target.value))}/></label><label>Target jobs / second<input type="number" min="1" value={form.target_rate ?? ''} onChange={e => update('target_rate', e.target.value ? Number(e.target.value) : null)}/></label></div></fieldset>
+    <fieldset><legend>Workload behavior</legend><div className="form-grid"><label>Workload<select value={form.workload} onChange={e => update('workload', e.target.value)}><option value="io_light">Light I/O</option><option value="io_heavy">Heavy I/O</option><option value="cpu_light">Light CPU</option><option value="unreliable">Unreliable dependency</option></select></label><label>Duration per job (ms)<input type="number" min="0" max="60000" value={form.duration_ms} onChange={e => update('duration_ms', Number(e.target.value))}/></label><label>Failure probability (%)<input type="number" min="0" max="100" step="0.1" value={form.failure_probability * 100} onChange={e => update('failure_probability', Number(e.target.value) / 100)}/></label><label>Maximum retries<input type="number" min="0" max="10" value={form.max_retries} onChange={e => update('max_retries', Number(e.target.value))}/></label></div></fieldset>
+    {form.job_count > 1_000_000 && <div className="notice">Extreme-scale runs use simulation mode to protect the public deployment and avoid storing millions of individual records.</div>}{mutation.error && <div className="error-box">{mutation.error.message}</div>}<button className="button primary submit" disabled={mutation.isPending}><Play size={18}/>{mutation.isPending ? 'Starting…' : 'Start benchmark'}</button>
+  </form></section>
+}
+
+function RunView() {
+  const { id } = useParams()
+  const client = useQueryClient()
+  const { data: run, isLoading } = useQuery({ queryKey: ['run', id], queryFn: () => api.getRun(id!), enabled: !!id, refetchInterval: 3000 })
+  const live = useRunMetrics(id)
+  const cancel = useMutation({ mutationFn: () => api.cancelRun(id!), onSuccess: () => client.invalidateQueries({ queryKey: ['run', id] }) })
+  const metrics = Object.keys(live.metrics).length ? live.metrics : (run?.final_metrics ?? {})
+  const chartData = live.history.length ? live.history : (run?.snapshots ?? [])
+  const bottleneck = useMemo(() => detectBottleneck(metrics), [metrics])
+  if (isLoading || !run) return <div className="empty">Loading benchmark…</div>
+  const progress = Math.min(100, ((metrics.completed ?? 0) + (metrics.failed ?? 0)) / run.job_count * 100)
+  return <><section className="run-header"><div><span className="eyebrow">Benchmark {run.id.slice(0, 8)}</span><h1>{run.name}</h1><div className="run-meta"><StatusBadge status={run.status}/><span>{run.mode}</span><span>{number.format(run.job_count)} jobs</span><span>{run.workload.replace('_',' ')}</span></div></div>{!['completed','cancelled','failed'].includes(run.status) && <button className="button danger" onClick={() => cancel.mutate()}><Square size={15}/> Cancel run</button>}</section>
+    <div className="progress"><div style={{width: `${progress}%`}}/><span>{progress.toFixed(1)}%</span></div>
+    <section className="summary-grid live"><MetricCard label="Completed" value={compact.format(metrics.completed ?? 0)} detail={`${number.format(metrics.queued ?? 0)} currently queued`} tone="green"/><MetricCard label="Throughput" value={`${compact.format(metrics.throughput ?? 0)}/s`} detail={`${metrics.elapsed_seconds ?? 0}s elapsed`}/><MetricCard label="Active workers" value={metrics.active_workers ?? 0} detail={`${metrics.running ?? 0} jobs executing`} tone="purple"/><MetricCard label="Errors" value={number.format(metrics.failed ?? 0)} detail={`${number.format(metrics.retries ?? 0)} retries`} tone="orange"/></section>
+    <section className="charts-grid"><Chart title="Queue and completion" subtitle="Work moving through the system" data={chartData} lines={[['queued','#f59e0b'],['completed','#39d98a']]}/><Chart title="Processing throughput" subtitle="Completed jobs per second" data={chartData} lines={[['throughput','#5ba5ff']]}/><Chart title="Latency percentiles" subtitle="End-to-end processing latency (ms)" data={chartData} lines={[['p50_ms','#39d98a'],['p95_ms','#a78bfa'],['p99_ms','#fb7185']]}/><div className={`diagnosis ${bottleneck.severity}`}><div className="chart-title"><span><Gauge size={18}/> Automated diagnosis</span><small>Evidence-based estimate</small></div><div className="diagnosis-body"><Activity size={40}/><h3>{bottleneck.title}</h3><p>{bottleneck.detail}</p><dl><div><dt>Queue wait</dt><dd>{metrics.average_queue_ms ?? 0} ms</dd></div><div><dt>Processing</dt><dd>{metrics.average_processing_ms ?? 0} ms</dd></div><div><dt>P99</dt><dd>{metrics.p99_ms ?? 0} ms</dd></div></dl></div></div></section>
+    <section className="panel technical"><div className="section-heading"><div><span className="eyebrow">Run configuration</span><h2>Experiment details</h2></div><span className={`connection ${live.connected ? 'online' : ''}`}><i/>{live.connected ? 'Live stream connected' : run.status === 'completed' ? 'Historical result' : 'Reconnecting'}</span></div><div className="detail-grid"><div><span>Producer concurrency</span><strong>{run.producer_concurrency}</strong></div><div><span>Target rate</span><strong>{run.target_rate ? `${number.format(run.target_rate)}/s` : 'Unlimited'}</strong></div><div><span>Job duration</span><strong>{run.duration_ms} ms</strong></div><div><span>Failure probability</span><strong>{run.failure_probability * 100}%</strong></div><div><span>Maximum retries</span><strong>{run.max_retries}</strong></div><div><span>Dead-lettered</span><strong>{metrics.dead_lettered ?? 0}</strong></div></div></section>
+  </>
+}
+
+function Chart({ title, subtitle, data, lines }: { title: string; subtitle: string; data: Metrics[]; lines: Array<[keyof Metrics,string]> }) {
+  return <div className="chart"><div className="chart-title"><span><BarChart3 size={18}/>{title}</span><small>{subtitle}</small></div><ResponsiveContainer width="100%" height={235}><LineChart data={data}><CartesianGrid stroke="#263044" strokeDasharray="3 3"/><XAxis dataKey="timestamp" hide/><YAxis stroke="#6f7b91" tickFormatter={value => compact.format(value)}/><Tooltip contentStyle={{background:'#111827',border:'1px solid #303b50',borderRadius:8}}/>{lines.map(([key,color]) => <Line key={String(key)} type="monotone" dataKey={key} stroke={color} dot={false} strokeWidth={2}/>)}</LineChart></ResponsiveContainer></div>
+}
+
+export default Shell
+

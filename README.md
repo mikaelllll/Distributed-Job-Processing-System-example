@@ -122,4 +122,3 @@ The default deployment limits real runs to one million jobs. A one-hundred-milli
 
 The repository contains the first complete vertical slice: benchmark configuration, reliable dispatch, workload generation, custom workers, retries, dead letters, live aggregation, persisted snapshots, React visualization, observability services, containers, tests, and CI. Future releases can add authentication, organization-level tenancy, richer per-job audit views, and externally managed production infrastructure.
 
-
