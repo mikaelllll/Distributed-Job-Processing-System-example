@@ -6,7 +6,12 @@ import { Link, NavLink, Route, Routes, useNavigate, useParams } from 'react-rout
 import { api } from './api'
 import { compact, detectBottleneck, EmptyState, FieldLabel, HelpTip, mergeMetricHistory, MetricCard, number, StatusBadge } from './components'
 import { useRunMetrics } from './hooks'
-import type { Metrics, RunCreate } from './types'
+import type { Metrics, RunCreate, RunMode } from './types'
+
+export function modeForJobCount(jobCount: number, currentMode: RunMode): RunMode {
+  if (jobCount > 1_000_000) return 'simulation'
+  return currentMode === 'simulation' ? 'benchmark' : currentMode
+}
 
 function Shell() {
   return <div className="shell">
@@ -42,7 +47,7 @@ function CreateRun() {
   const updateJobCount = (value: number) => setForm(current => ({
     ...current,
     job_count: value,
-    mode: value > 1_000_000 ? 'simulation' : current.mode === 'simulation' ? 'benchmark' : current.mode,
+    mode: modeForJobCount(value, current.mode),
   }))
   const submit = (event: FormEvent) => { event.preventDefault(); mutation.mutate(form) }
   return <section className="create-layout"><div className="page-title"><span className="eyebrow">Controlled experiment</span><h1>Configure benchmark</h1><p>Create a reproducible workload. The browser sends one command; the dedicated generator publishes jobs at the configured rate.</p></div><form className="config-panel" onSubmit={submit}>

@@ -114,6 +114,37 @@ make frontend-test
 make logs
 ```
 
+## Testing strategy
+
+The project uses layered verification so failures are caught at the cheapest useful level:
+
+- **Backend unit tests:** validation boundaries, workload behavior, counter reconciliation,
+  latency percentiles, and settings parsing.
+- **Frontend unit tests:** bottleneck diagnosis and chronological metric-history merging.
+- **Build and static analysis:** Ruff, formatting, strict mypy, TypeScript compilation, and
+  production frontend builds.
+- **Container checks:** Compose validation and production image builds.
+- **End-to-end tests:** a real PostgreSQL, Redis, RabbitMQ, API, generator, aggregator, and worker
+  stack executes every real workload and mode, retries/dead letters, simulation boundaries,
+  cancellation, deletion, health checks, accounting invariants, and SSE termination.
+
+GitHub Actions runs the complete suite for every pull request, every push to `main`, a weekly
+scheduled build, and manual `workflow_dispatch` runs. Failed integration jobs upload container
+logs for diagnosis.
+
+Run the complete integration suite against an already-running Compose stack:
+
+```bash
+python -m pytest tests/e2e -q
+```
+
+The central completion invariant is:
+
+```text
+succeeded + permanently_failed = requested
+pending = running = awaiting_retry = 0
+```
+
 ## Responsible benchmarking
 
 The default deployment limits real runs to one million jobs. A one-hundred-million selection is simulation mode, clearly identified in the interface. Raising limits requires infrastructure sized for the resulting broker traffic, storage, network usage, and cost. Never point load generation at systems you do not own or have permission to test.
@@ -121,4 +152,3 @@ The default deployment limits real runs to one million jobs. A one-hundred-milli
 ## Project status
 
 The repository contains the first complete vertical slice: benchmark configuration, reliable dispatch, workload generation, custom workers, retries, dead letters, live aggregation, persisted snapshots, React visualization, observability services, containers, tests, and CI. Future releases can add authentication, organization-level tenancy, richer per-job audit views, and externally managed production infrastructure.
-
