@@ -8,6 +8,8 @@ export function useRunMetrics(runId: string | undefined, enabled = true) {
   const [connected, setConnected] = useState(false)
 
   useEffect(() => {
+    setMetrics({})
+    setHistory([])
     if (!runId || !enabled) {
       setConnected(false)
       return

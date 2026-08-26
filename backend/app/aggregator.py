@@ -37,7 +37,8 @@ def reconcile_in_flight_metrics(numeric: dict[str, float]) -> tuple[int, int, in
     running = max(0, int(numeric.get("running", 0)))
     retrying = max(0, int(numeric.get("retrying", 0)))
     terminal = completed + failed + cancelled
-    queued = max(0, submitted - terminal - running - retrying)
+    # "Queued" is user-facing pending work: ready jobs plus delayed retries.
+    queued = max(0, submitted - terminal - running)
     return queued, running, retrying, terminal
 
 

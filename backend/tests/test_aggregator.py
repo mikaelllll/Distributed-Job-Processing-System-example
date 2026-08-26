@@ -29,4 +29,4 @@ def test_accounts_for_running_and_retrying_jobs() -> None:
         }
     )
 
-    assert (queued, running, retrying, terminal) == (10, 4, 3, 83)
+    assert (queued, running, retrying, terminal) == (13, 4, 3, 83)
