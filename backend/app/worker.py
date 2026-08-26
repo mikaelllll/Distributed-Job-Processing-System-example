@@ -46,7 +46,6 @@ async def execute(message: AbstractIncomingMessage, channel: AbstractChannel, re
     started = time.perf_counter()
     async with message.process(ignore_processed=True):
         if await redis.get(control_key(run_id)) == "cancelled":
-            await redis.hincrby(key, "cancelled", 1)
             return
         if attempt:
             await redis.hincrby(key, "retrying", -1)
@@ -58,6 +57,8 @@ async def execute(message: AbstractIncomingMessage, channel: AbstractChannel, re
             async with asyncio.timeout(max(5, int(job["duration_ms"]) / 1000 + 5)):
                 await run_workload(job)
         except Exception as exc:
+            if await redis.get(control_key(run_id)) == "cancelled":
+                return
             await redis.hincrby(key, "running", -1)
             if attempt < int(job["max_retries"]):
                 next_attempt = attempt + 1
@@ -75,6 +76,9 @@ async def execute(message: AbstractIncomingMessage, channel: AbstractChannel, re
                 await redis.hincrby(key, "failed", 1)
                 await redis.hincrby(key, "dead_lettered", 1)
                 await save_error(job, exc)
+            return
+
+        if await redis.get(control_key(run_id)) == "cancelled":
             return
 
         elapsed_ms = (time.perf_counter() - started) * 1_000

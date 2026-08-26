@@ -5,7 +5,7 @@ from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response, StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -13,7 +13,7 @@ from sqlalchemy.orm import selectinload
 from app.config import get_settings
 from app.database import get_session
 from app.models import BenchmarkRun, OutboxEvent, RunStatus
-from app.redis_client import control_key, create_redis, metrics_key
+from app.redis_client import control_key, create_redis, latency_key, metrics_key, workers_key
 from app.schemas import BenchmarkCreate, BenchmarkDetail, BenchmarkRead, RunActionResponse
 
 router = APIRouter(prefix="/runs", tags=["benchmark runs"])
@@ -82,10 +82,41 @@ async def cancel_run(
     redis = create_redis()
     try:
         await redis.set(control_key(str(run_id)), "cancelled", ex=86_400)
+        key = metrics_key(str(run_id))
+        if await redis.exists(key):
+            await redis.hset(
+                key,
+                mapping={"pending": 0, "running": 0, "retrying": 0, "stream_finished": 1},
+            )
     finally:
         await redis.aclose()
     await session.commit()
     return RunActionResponse(id=run.id, status=run.status)
+
+
+@router.delete("/{run_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_run(
+    run_id: uuid.UUID, session: AsyncSession = Depends(get_session)
+) -> Response:
+    run = await session.get(BenchmarkRun, run_id)
+    if run is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Benchmark run not found")
+
+    redis = create_redis()
+    try:
+        # Cancellation is written first so producers and workers stop before
+        # durable history and ephemeral metrics are removed.
+        await redis.set(control_key(str(run_id)), "cancelled", ex=86_400)
+        await session.delete(run)
+        await session.commit()
+        await redis.delete(
+            metrics_key(str(run_id)),
+            latency_key(str(run_id)),
+            workers_key(str(run_id)),
+        )
+    finally:
+        await redis.aclose()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{run_id}/events")

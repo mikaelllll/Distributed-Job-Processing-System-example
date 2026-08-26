@@ -15,3 +15,11 @@ def metrics_key(run_id: str) -> str:
 
 def control_key(run_id: str) -> str:
     return f"run:{run_id}:control"
+
+
+def latency_key(run_id: str) -> str:
+    return f"run:{run_id}:latency_buckets"
+
+
+def workers_key(run_id: str) -> str:
+    return f"run:{run_id}:workers"

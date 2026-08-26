@@ -1,6 +1,6 @@
 import { FormEvent, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Activity, ArrowRight, BarChart3, Boxes, Gauge, Github, Play, Radio, Server, Square } from 'lucide-react'
+import { Activity, ArrowRight, BarChart3, Boxes, Gauge, Github, Play, Radio, Server, Square, Trash2 } from 'lucide-react'
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Link, NavLink, Route, Routes, useNavigate, useParams } from 'react-router-dom'
 import { api } from './api'
@@ -20,14 +20,16 @@ function Shell() {
 }
 
 function Overview() {
+  const client = useQueryClient()
   const { data: runs = [], isLoading } = useQuery({ queryKey: ['runs'], queryFn: api.listRuns, refetchInterval: 5000 })
+  const remove = useMutation({ mutationFn: api.deleteRun, onSuccess: () => client.invalidateQueries({ queryKey: ['runs'] }) })
   const active = runs.filter((run) => ['pending', 'producing', 'running'].includes(run.status))
   const completed = runs.filter((run) => run.status === 'completed')
   return <>
     <section className="hero"><div><span className="eyebrow"><Radio size={14} /> Distributed systems, made visible</span><h1>Watch work move.<br/><em>Find what slows it down.</em></h1><p>Generate controlled workloads, distribute them across asynchronous workers, and inspect throughput, latency, failures, and bottlenecks as they happen.</p><div className="hero-actions"><Link className="button primary" to="/new"><Play size={17} /> Run a benchmark</Link><a className="button ghost" href="#runs">View history <ArrowRight size={17} /></a></div></div><div className="system-map"><div className="map-node client">LOAD GENERATOR</div><ArrowRight/><div className="map-node broker">RABBITMQ<small>durable queue</small></div><div className="worker-row"><div>W1</div><div>W2</div><div>W3</div></div><div className="map-stats"><span><i className="green"/> AT-LEAST-ONCE</span><span><i/> LIVE METRICS</span></div></div></section>
     <section className="summary-grid"><MetricCard label="Total runs" value={runs.length} detail="Recorded benchmarks"/><MetricCard label="Active now" value={active.length} detail="Producing or processing" tone="green"/><MetricCard label="Completed" value={completed.length} detail="Final reports available" tone="purple"/><MetricCard label="Largest run" value={compact.format(Math.max(0, ...runs.map(r => r.job_count)))} detail="Logical jobs" tone="orange"/></section>
     <section id="runs" className="panel"><div className="section-heading"><div><span className="eyebrow">Benchmark history</span><h2>Recent runs</h2></div><Link className="button small" to="/new">New run</Link></div>
-      {isLoading ? <div className="empty">Loading runs…</div> : runs.length === 0 ? <EmptyState>No benchmarks yet. Create the first workload to see the system in action.</EmptyState> : <div className="table-wrap"><table><thead><tr><th>Run</th><th>Status</th><th>Mode</th><th>Jobs</th><th>Workload</th><th>Created</th><th/></tr></thead><tbody>{runs.map(run => <tr key={run.id}><td><strong>{run.name}</strong><small>{run.id.slice(0, 8)}</small></td><td><StatusBadge status={run.status}/></td><td>{run.mode}</td><td>{number.format(run.job_count)}</td><td>{run.workload.replace('_', ' ')}</td><td>{new Date(run.created_at).toLocaleString()}</td><td><Link to={`/runs/${run.id}`}>Inspect <ArrowRight size={14}/></Link></td></tr>)}</tbody></table></div>}
+      {isLoading ? <div className="empty">Loading runs…</div> : runs.length === 0 ? <EmptyState>No benchmarks yet. Create the first workload to see the system in action.</EmptyState> : <div className="table-wrap"><table><thead><tr><th>Run</th><th>Status</th><th>Mode</th><th>Jobs</th><th>Workload</th><th>Created</th><th/></tr></thead><tbody>{runs.map(run => <tr key={run.id}><td><strong>{run.name}</strong><small>{run.id.slice(0, 8)}</small></td><td><StatusBadge status={run.status}/></td><td>{run.mode}</td><td>{number.format(run.job_count)}</td><td>{run.workload.replace('_', ' ')}</td><td>{new Date(run.created_at).toLocaleString()}</td><td><div className="row-actions"><Link to={`/runs/${run.id}`}>Inspect <ArrowRight size={14}/></Link><button className="delete-run" aria-label={`Delete ${run.name}`} title="Stop and delete run" disabled={remove.isPending} onClick={() => { if (window.confirm(`Stop and permanently delete “${run.name}”?`)) remove.mutate(run.id) }}><Trash2 size={16}/></button></div></td></tr>)}</tbody></table></div>}
     </section>
   </>
 }

@@ -11,6 +11,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     const body = await response.json().catch(() => null)
     throw new Error(body?.detail ?? `Request failed with status ${response.status}`)
   }
+  if (response.status === 204) return undefined as T
   return response.json() as Promise<T>
 }
 
@@ -19,6 +20,6 @@ export const api = {
   getRun: (id: string) => request<Run>(`/runs/${id}`),
   createRun: (payload: RunCreate) => request<Run>('/runs', { method: 'POST', body: JSON.stringify(payload) }),
   cancelRun: (id: string) => request(`/runs/${id}/cancel`, { method: 'POST' }),
+  deleteRun: (id: string) => request<void>(`/runs/${id}`, { method: 'DELETE' }),
   eventsUrl: (id: string) => `${BASE}/runs/${id}/events`,
 }
-
