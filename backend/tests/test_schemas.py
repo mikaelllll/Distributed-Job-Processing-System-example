@@ -19,3 +19,8 @@ def test_large_real_run_is_rejected() -> None:
 def test_large_simulation_is_allowed() -> None:
     benchmark = BenchmarkCreate(name="Simulation", job_count=100_000_000, mode=RunMode.simulation)
     assert benchmark.job_count == 100_000_000
+
+
+def test_small_simulation_is_rejected() -> None:
+    with pytest.raises(ValidationError):
+        BenchmarkCreate(name="Misleading simulation", job_count=100_000, mode=RunMode.simulation)

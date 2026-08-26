@@ -22,6 +22,8 @@ class BenchmarkCreate(BaseModel):
     def validate_large_run(self) -> "BenchmarkCreate":
         if self.job_count > 1_000_000 and self.mode != RunMode.simulation:
             raise ValueError("Runs above 1,000,000 jobs require simulation mode")
+        if self.job_count <= 1_000_000 and self.mode == RunMode.simulation:
+            raise ValueError("Simulation mode is reserved for runs above 1,000,000 jobs")
         return self
 
 
