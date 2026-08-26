@@ -12,7 +12,7 @@
     },
     "8000": {
       "label": "FastAPI",
-      "onAutoForward": "notify"
+      "onAutoForward": "silent"
     },
     "15672": {
       "label": "RabbitMQ management",
@@ -26,6 +26,9 @@
       "label": "Prometheus",
       "onAutoForward": "silent"
     }
+  },
+  "otherPortsAttributes": {
+    "onAutoForward": "silent"
   },
   "postCreateCommand": "cp -n .env.example .env",
   "postStartCommand": "bash .devcontainer/start-platform.sh",
