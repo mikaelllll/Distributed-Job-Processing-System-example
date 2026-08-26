@@ -7,6 +7,13 @@ if [[ ! -f .env ]]; then
   cp .env.example .env
 fi
 
+if curl --fail --silent http://127.0.0.1:8000/health/ready >/dev/null 2>&1 \
+  && curl --fail --silent http://127.0.0.1:3000/healthz >/dev/null 2>&1; then
+  echo "Platform is already running."
+  bash .devcontainer/print-urls.sh
+  exit 0
+fi
+
 worker_replicas="${WORKER_REPLICAS:-4}"
 
 echo "Starting the complete platform with ${worker_replicas} workers..."
