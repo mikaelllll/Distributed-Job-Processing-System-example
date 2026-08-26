@@ -1,0 +1,43 @@
+{
+  "name": "Distributed Job Platform",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "forwardPorts": [3000, 8000, 15672, 3001, 9090],
+  "portsAttributes": {
+    "3000": {
+      "label": "Dispatch frontend",
+      "onAutoForward": "openBrowserOnce"
+    },
+    "8000": {
+      "label": "FastAPI",
+      "onAutoForward": "notify"
+    },
+    "15672": {
+      "label": "RabbitMQ management",
+      "onAutoForward": "silent"
+    },
+    "3001": {
+      "label": "Grafana",
+      "onAutoForward": "silent"
+    },
+    "9090": {
+      "label": "Prometheus",
+      "onAutoForward": "silent"
+    }
+  },
+  "postCreateCommand": "cp -n .env.example .env",
+  "postStartCommand": "bash .devcontainer/start-platform.sh",
+  "postAttachCommand": "bash .devcontainer/print-urls.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "ms-python.python",
+        "charliermarsh.ruff",
+        "dbaeumer.vscode-eslint"
+      ]
+    }
+  }
+}

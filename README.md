@@ -114,6 +114,25 @@ make frontend-test
 make logs
 ```
 
+## GitHub Codespaces
+
+Creating a Codespace from this repository automatically installs Docker, creates `.env`, builds
+the complete Compose stack, starts four workers, waits for the API and frontend health checks, and
+opens the frontend. The forwarded ports are labeled in the VS Code **Ports** tab.
+
+The startup terminal prints direct URLs for the frontend, FastAPI documentation, RabbitMQ,
+Grafana, and Prometheus. To print them again at any time:
+
+```bash
+bash .devcontainer/print-urls.sh
+```
+
+To restart the complete platform manually:
+
+```bash
+bash .devcontainer/start-platform.sh
+```
+
 ## Testing strategy
 
 The project uses layered verification so failures are caught at the cheapest useful level:
