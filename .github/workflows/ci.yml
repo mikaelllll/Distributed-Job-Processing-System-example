@@ -33,7 +33,7 @@ jobs:
       - run: mypy app
       - run: pytest --junitxml=test-results.xml
       - run: pip install pip-audit && pip-audit --strict .
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: backend-test-results
@@ -94,7 +94,7 @@ jobs:
       - name: Capture container logs on failure
         if: failure()
         run: docker compose logs --no-color > integration-logs.txt
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: integration-logs
