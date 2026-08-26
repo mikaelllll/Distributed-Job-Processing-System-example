@@ -35,7 +35,7 @@
   },
   "postCreateCommand": "cp -n .env.example .env && bash .devcontainer/start-platform.sh",
   "postStartCommand": "bash .devcontainer/start-platform.sh",
-  "postAttachCommand": "bash .devcontainer/print-urls.sh",
+  "postAttachCommand": "bash .devcontainer/print-urls.sh --open-frontend",
   "waitFor": "postCreateCommand",
   "customizations": {
     "vscode": {
