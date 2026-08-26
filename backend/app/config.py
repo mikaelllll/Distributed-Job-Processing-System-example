@@ -1,7 +1,8 @@
 from functools import lru_cache
+from typing import Annotated
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -12,7 +13,7 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://job_platform@localhost:5432/job_platform"
     rabbitmq_url: str = "amqp://guest@localhost:5672/"
     redis_url: str = "redis://localhost:6379/0"
-    cors_origins: list[str] = Field(
+    cors_origins: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: ["http://localhost:3000", "http://localhost:5173"]
     )
     public_max_jobs: int = Field(default=1_000_000, ge=1, le=100_000_000)
