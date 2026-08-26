@@ -28,6 +28,19 @@ def percentile(buckets: dict[str, str], count: int, target: float) -> int:
     return LATENCY_BUCKETS_MS[-1]
 
 
+def reconcile_in_flight_metrics(numeric: dict[str, float]) -> tuple[int, int, int, int]:
+    """Derive in-flight counts from lifecycle counters instead of timing-sensitive deltas."""
+    submitted = int(numeric.get("submitted", 0))
+    completed = int(numeric.get("completed", 0))
+    failed = int(numeric.get("failed", 0))
+    cancelled = int(numeric.get("cancelled", 0))
+    running = max(0, int(numeric.get("running", 0)))
+    retrying = max(0, int(numeric.get("retrying", 0)))
+    terminal = completed + failed + cancelled
+    queued = max(0, submitted - terminal - running - retrying)
+    return queued, running, retrying, terminal
+
+
 async def collect() -> None:
     settings = get_settings()
     redis = create_redis()
@@ -51,8 +64,12 @@ async def collect() -> None:
                     failed = int(numeric.get("failed", 0))
                     latency_count = int(numeric.get("latency_count", 0))
                     buckets = await redis.hgetall(f"run:{run.id}:latency_buckets")
+                    queued, running, retrying, terminal = reconcile_in_flight_metrics(numeric)
                     snapshot = {
                         **{k: int(v) if v.is_integer() else v for k, v in numeric.items()},
+                        "queued": queued,
+                        "running": running,
+                        "retrying": retrying,
                         "active_workers": workers,
                         "elapsed_seconds": round(elapsed, 2),
                         "throughput": round((completed + failed) / elapsed, 2),
@@ -66,16 +83,30 @@ async def collect() -> None:
                         "p95_ms": percentile(buckets, latency_count, 0.95),
                         "p99_ms": percentile(buckets, latency_count, 0.99),
                     }
+                    production_finished = bool(int(numeric.get("production_finished", 0)))
+                    submitted = int(numeric.get("submitted", 0))
+                    is_complete = (
+                        production_finished
+                        and submitted >= run.job_count
+                        and terminal >= submitted
+                        and running == 0
+                        and retrying == 0
+                    )
+                    if is_complete:
+                        snapshot.update(
+                            queued=0,
+                            running=0,
+                            retrying=0,
+                            stream_finished=1,
+                        )
+                        run.status = RunStatus.completed
+                        run.completed_at = datetime.now(UTC)
+                        run.final_metrics = snapshot
                     await redis.hset(
                         key,
                         mapping={k: v for k, v in snapshot.items() if isinstance(v, int | float)},
                     )
                     session.add(MetricSnapshot(run_id=run.id, metrics=snapshot))
-                    terminal = completed + failed + int(numeric.get("cancelled", 0))
-                    if int(numeric.get("production_finished", 0)) and terminal >= run.job_count:
-                        run.status = RunStatus.completed
-                        run.completed_at = datetime.now(UTC)
-                        run.final_metrics = snapshot
                 await session.commit()
             await asyncio.sleep(settings.metrics_flush_interval_seconds)
     finally:

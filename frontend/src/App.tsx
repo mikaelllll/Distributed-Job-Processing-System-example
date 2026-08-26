@@ -50,10 +50,13 @@ function RunView() {
   const { id } = useParams()
   const client = useQueryClient()
   const { data: run, isLoading } = useQuery({ queryKey: ['run', id], queryFn: () => api.getRun(id!), enabled: !!id, refetchInterval: 3000 })
-  const live = useRunMetrics(id)
+  const isTerminal = !!run && ['completed', 'cancelled', 'failed'].includes(run.status)
+  const live = useRunMetrics(id, !isTerminal)
   const cancel = useMutation({ mutationFn: () => api.cancelRun(id!), onSuccess: () => client.invalidateQueries({ queryKey: ['run', id] }) })
   const metrics = Object.keys(live.metrics).length ? live.metrics : (run?.final_metrics ?? {})
-  const chartData = live.history.length ? live.history : (run?.snapshots ?? [])
+  const chartData = live.history.length
+    ? [...(run?.snapshots ?? []), ...live.history].slice(-180)
+    : (run?.snapshots ?? [])
   const bottleneck = useMemo(() => detectBottleneck(metrics), [metrics])
   if (isLoading || !run) return <div className="empty">Loading benchmark…</div>
   const progress = Math.min(100, ((metrics.completed ?? 0) + (metrics.failed ?? 0)) / run.job_count * 100)
@@ -70,4 +73,3 @@ function Chart({ title, subtitle, data, lines }: { title: string; subtitle: stri
 }
 
 export default Shell
-

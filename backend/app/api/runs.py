@@ -62,8 +62,8 @@ async def get_run(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Benchmark run not found")
     data = BenchmarkRead.model_validate(run).model_dump()
     data["snapshots"] = [
-        {"recorded_at": snapshot.recorded_at.isoformat(), **snapshot.metrics}
-        for snapshot in run.snapshots
+        {"timestamp": snapshot.recorded_at.isoformat(), **snapshot.metrics}
+        for snapshot in sorted(run.snapshots, key=lambda item: item.recorded_at)
     ]
     return BenchmarkDetail.model_validate(data)
 
@@ -99,6 +99,8 @@ async def stream_run(run_id: uuid.UUID, request: Request) -> StreamingResponse:
                 payload = {key: _number(value) for key, value in values.items()}
                 payload["timestamp"] = datetime.now(UTC).isoformat()
                 yield f"event: metrics\ndata: {json.dumps(payload)}\n\n"
+                if payload.get("stream_finished") == 1:
+                    break
                 await asyncio.sleep(1)
         finally:
             await redis.aclose()

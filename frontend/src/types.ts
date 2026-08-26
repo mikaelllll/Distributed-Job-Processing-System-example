@@ -17,7 +17,7 @@ export interface Run {
   started_at: string | null
   completed_at: string | null
   final_metrics: Metrics | null
-  snapshots?: Array<Metrics & { recorded_at: string }>
+  snapshots?: Metrics[]
 }
 
 export interface Metrics {
@@ -39,6 +39,7 @@ export interface Metrics {
   p50_ms?: number
   p95_ms?: number
   p99_ms?: number
+  stream_finished?: number
 }
 
 export interface RunCreate {
@@ -52,4 +53,3 @@ export interface RunCreate {
   failure_probability: number
   max_retries: number
 }
-
