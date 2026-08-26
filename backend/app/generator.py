@@ -36,6 +36,7 @@ async def generate(message: AbstractIncomingMessage, channel: AbstractChannel) -
             config: dict[str, Any] = {
                 "job_count": run.job_count,
                 "mode": run.mode.value,
+                "producer_concurrency": run.producer_concurrency,
                 "target_rate": run.target_rate,
                 "workload": run.workload,
                 "duration_ms": run.duration_ms,
@@ -65,7 +66,7 @@ async def generate(message: AbstractIncomingMessage, channel: AbstractChannel) -
             await _simulate(str(run_id), config, redis)
         else:
             exchange = await channel.get_exchange(JOBS_EXCHANGE)
-            batch_size = 500
+            batch_size = max(1, int(config["producer_concurrency"]))
             interval = batch_size / config["target_rate"] if config["target_rate"] else 0
             for start in range(0, config["job_count"], batch_size):
                 if await redis.get(control_key(str(run_id))) == "cancelled":

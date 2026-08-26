@@ -97,6 +97,8 @@ async def run_workload(job: dict[str, Any]) -> None:
     duration = int(job["duration_ms"]) / 1_000
     if job["workload"] == "cpu_light":
         await asyncio.to_thread(cpu_work, max(1, int(job["duration_ms"])))
+    elif job["workload"] == "io_heavy":
+        await asyncio.gather(*(asyncio.sleep(duration) for _ in range(4)))
     else:
         await asyncio.sleep(duration)
 
