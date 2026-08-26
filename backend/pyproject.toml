@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Observable distributed job processing and benchmarking platform"
 requires-python = ">=3.12"
 dependencies = [
-  "aio-pika>=9.4,<10",
+  "aio-pika>=9.4,<11",
   "alembic>=1.13,<2",
   "asyncpg>=0.30,<1",
   "fastapi>=0.115,<1",
