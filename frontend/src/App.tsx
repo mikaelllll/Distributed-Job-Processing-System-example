@@ -4,7 +4,7 @@ import { Activity, ArrowRight, BarChart3, Boxes, Gauge, Github, Play, Radio, Ser
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Link, NavLink, Route, Routes, useNavigate, useParams } from 'react-router-dom'
 import { api } from './api'
-import { compact, detectBottleneck, EmptyState, FieldLabel, HelpTip, MetricCard, number, StatusBadge } from './components'
+import { compact, detectBottleneck, EmptyState, FieldLabel, HelpTip, mergeMetricHistory, MetricCard, number, StatusBadge } from './components'
 import { useRunMetrics } from './hooks'
 import type { Metrics, RunCreate } from './types'
 
@@ -54,9 +54,10 @@ function RunView() {
   const live = useRunMetrics(id, !isTerminal)
   const cancel = useMutation({ mutationFn: () => api.cancelRun(id!), onSuccess: () => client.invalidateQueries({ queryKey: ['run', id] }) })
   const metrics = Object.keys(live.metrics).length ? live.metrics : (run?.final_metrics ?? {})
-  const chartData = live.history.length
-    ? [...(run?.snapshots ?? []), ...live.history].slice(-180)
-    : (run?.snapshots ?? [])
+  const chartData = useMemo(
+    () => mergeMetricHistory(run?.snapshots ?? [], live.history),
+    [run?.snapshots, live.history],
+  )
   const bottleneck = useMemo(() => detectBottleneck(metrics), [metrics])
   if (isLoading || !run) return <div className="empty">Loading benchmark…</div>
   const progress = Math.min(100, ((metrics.completed ?? 0) + (metrics.failed ?? 0)) / run.job_count * 100)

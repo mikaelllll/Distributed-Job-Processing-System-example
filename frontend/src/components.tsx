@@ -36,5 +36,15 @@ export function detectBottleneck(metrics: Metrics): { title: string; detail: str
   return { title: 'No clear bottleneck', detail: 'Submission and processing rates currently appear balanced.', severity: 'healthy' }
 }
 
+export function mergeMetricHistory(persisted: Metrics[], live: Metrics[], limit = 180): Metrics[] {
+  const samples = new Map<string, Metrics>()
+  for (const sample of [...persisted, ...live]) {
+    if (sample.timestamp) samples.set(sample.timestamp, sample)
+  }
+  return [...samples.values()]
+    .sort((left, right) => Date.parse(left.timestamp!) - Date.parse(right.timestamp!))
+    .slice(-limit)
+}
+
 export const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 })
 export const number = new Intl.NumberFormat('en')
