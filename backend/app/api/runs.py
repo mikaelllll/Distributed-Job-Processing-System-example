@@ -95,9 +95,7 @@ async def cancel_run(
 
 
 @router.delete("/{run_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_run(
-    run_id: uuid.UUID, session: AsyncSession = Depends(get_session)
-) -> Response:
+async def delete_run(run_id: uuid.UUID, session: AsyncSession = Depends(get_session)) -> Response:
     run = await session.get(BenchmarkRun, run_id)
     if run is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Benchmark run not found")
