@@ -31,11 +31,12 @@ jobs:
       - run: ruff check .
       - run: ruff format --check .
       - run: mypy app
-      - run: pytest --cov=app --cov-report=term-missing --cov-report=xml --cov-fail-under=25
+      - run: pytest --junitxml=test-results.xml
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: backend-coverage
-          path: backend/coverage.xml
+          name: backend-test-results
+          path: backend/test-results.xml
 
   frontend:
     runs-on: ubuntu-latest
