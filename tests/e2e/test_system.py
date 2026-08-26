@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+import uuid
 from collections.abc import Iterator
 
 import httpx
@@ -78,6 +79,9 @@ def assert_exact_accounting(run: dict[str, object]) -> None:
 
 
 def test_health_frontend_and_observability(client: httpx.Client) -> None:
+    service = client.get("/")
+    assert service.status_code == 200
+    assert service.json()["documentation"] == "/docs"
     ready = client.get("/health/ready")
     assert ready.status_code == 200
     assert ready.json() == {
@@ -91,6 +95,11 @@ def test_health_frontend_and_observability(client: httpx.Client) -> None:
     frontend = httpx.get(FRONTEND, timeout=10)
     assert frontend.status_code == 200
     assert "Distributed Job Observatory" in frontend.text
+
+
+def test_unknown_event_stream_is_rejected(client: httpx.Client) -> None:
+    response = client.get(f"/api/v1/runs/{uuid.uuid4()}/events")
+    assert response.status_code == 404
 
 
 @pytest.mark.parametrize("mode", ["audit", "benchmark"])

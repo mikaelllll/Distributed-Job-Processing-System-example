@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.config import get_settings
-from app.database import get_session
+from app.database import SessionFactory, get_session
 from app.models import BenchmarkRun, OutboxEvent, RunStatus
 from app.redis_client import control_key, create_redis, latency_key, metrics_key, workers_key
 from app.schemas import BenchmarkCreate, BenchmarkDetail, BenchmarkRead, RunActionResponse
@@ -119,6 +119,10 @@ async def delete_run(run_id: uuid.UUID, session: AsyncSession = Depends(get_sess
 
 @router.get("/{run_id}/events")
 async def stream_run(run_id: uuid.UUID, request: Request) -> StreamingResponse:
+    async with SessionFactory() as session:
+        if await session.get(BenchmarkRun, run_id) is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Benchmark run not found")
+
     redis = create_redis()
 
     async def events() -> AsyncIterator[str]:

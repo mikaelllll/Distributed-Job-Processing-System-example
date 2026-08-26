@@ -33,7 +33,7 @@
   "otherPortsAttributes": {
     "onAutoForward": "silent"
   },
-  "postCreateCommand": "cp -n .env.example .env && bash .devcontainer/start-platform.sh",
+  "postCreateCommand": "bash .devcontainer/create-env.sh && bash .devcontainer/start-platform.sh",
   "postStartCommand": "bash .devcontainer/start-platform.sh",
   "postAttachCommand": "bash .devcontainer/print-urls.sh --open-frontend",
   "waitFor": "postCreateCommand",

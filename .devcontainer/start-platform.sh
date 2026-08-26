@@ -4,7 +4,7 @@ set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
 if [[ ! -f .env ]]; then
-  cp .env.example .env
+  bash .devcontainer/create-env.sh
 fi
 
 if curl --fail --silent http://127.0.0.1:8000/health/ready >/dev/null 2>&1 \

@@ -32,6 +32,7 @@ jobs:
       - run: ruff format --check .
       - run: mypy app
       - run: pytest --junitxml=test-results.xml
+      - run: pip install pip-audit && pip-audit --strict
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -51,8 +52,10 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      - run: npm run lint
       - run: npm run build
       - run: npm test -- --run
+      - run: npm audit --audit-level=high
 
   containers:
     runs-on: ubuntu-latest

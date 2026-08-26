@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { modeForJobCount } from './App'
+import { modeForJobCount } from './metrics'
 
 describe('modeForJobCount', () => {
   it.each(['audit', 'benchmark'] as const)(

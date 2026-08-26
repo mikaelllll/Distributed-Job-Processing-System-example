@@ -13,19 +13,22 @@ logs:
 	docker compose logs -f
 
 test:
-	docker compose run --rm api pytest
+	docker build --target test -t distributed-job-platform-backend-test backend
+	docker run --rm distributed-job-platform-backend-test
 
 lint:
-	docker compose run --rm api ruff check .
-	docker compose run --rm api mypy app
+	docker build --target test -t distributed-job-platform-backend-test backend
+	docker run --rm distributed-job-platform-backend-test ruff check .
+	docker run --rm distributed-job-platform-backend-test mypy app
 
 format:
-	docker compose run --rm api ruff format .
-	docker compose run --rm api ruff check --fix .
+	docker build --target test -t distributed-job-platform-backend-test backend
+	docker run --rm -v "$(CURDIR)/backend:/app" distributed-job-platform-backend-test ruff format .
+	docker run --rm -v "$(CURDIR)/backend:/app" distributed-job-platform-backend-test ruff check --fix .
 
 frontend-test:
-	docker run --rm -v "$(CURDIR)/frontend:/app" -w /app node:22-alpine \
-		sh -c "npm ci && npm test -- --run"
+	docker build --target test -t distributed-job-platform-frontend-test frontend
+	docker run --rm distributed-job-platform-frontend-test
 
 integration-test:
 	python -m pytest tests/e2e -q

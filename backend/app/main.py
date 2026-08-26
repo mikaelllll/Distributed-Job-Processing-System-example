@@ -29,12 +29,21 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
+    allow_headers=["Content-Type"],
 )
 app.include_router(health_router)
 app.include_router(runs_router, prefix="/api/v1")
+
+
+@app.get("/", tags=["service"])
+async def service_information() -> dict[str, str]:
+    return {
+        "name": settings.app_name,
+        "documentation": "/docs",
+        "health": "/health/ready",
+    }
 
 
 @app.get("/metrics", include_in_schema=False)

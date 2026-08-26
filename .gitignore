@@ -1,4 +1,6 @@
 .env
+.env.*
+!.env.example
 .venv/
 __pycache__/
 *.py[cod]
@@ -15,3 +17,6 @@ vite.config.d.ts
 .idea/
 .vscode/
 *.log
+test-results.xml
+.DS_Store
+Thumbs.db

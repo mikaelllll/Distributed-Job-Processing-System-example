@@ -1,17 +1,13 @@
 import { FormEvent, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Activity, ArrowRight, BarChart3, Boxes, Gauge, Github, Play, Radio, Server, Square, Trash2 } from 'lucide-react'
+import { Activity, ArrowRight, BarChart3, Boxes, Gauge, Github, Play, Radio, Square, Trash2 } from 'lucide-react'
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Link, NavLink, Route, Routes, useNavigate, useParams } from 'react-router-dom'
 import { api } from './api'
-import { compact, detectBottleneck, EmptyState, FieldLabel, HelpTip, mergeMetricHistory, MetricCard, number, StatusBadge } from './components'
+import { EmptyState, FieldLabel, HelpTip, MetricCard, StatusBadge } from './components'
 import { useRunMetrics } from './hooks'
-import type { Metrics, RunCreate, RunMode } from './types'
-
-export function modeForJobCount(jobCount: number, currentMode: RunMode): RunMode {
-  if (jobCount > 1_000_000) return 'simulation'
-  return currentMode === 'simulation' ? 'benchmark' : currentMode
-}
+import { compact, detectBottleneck, mergeMetricHistory, modeForJobCount, number } from './metrics'
+import type { Metrics, RunCreate } from './types'
 
 function Shell() {
   return <div className="shell">
@@ -65,7 +61,10 @@ function RunView() {
   const isTerminal = !!run && ['completed', 'cancelled', 'failed'].includes(run.status)
   const live = useRunMetrics(id, !isTerminal)
   const cancel = useMutation({ mutationFn: () => api.cancelRun(id!), onSuccess: () => client.invalidateQueries({ queryKey: ['run', id] }) })
-  const metrics = Object.keys(live.metrics).length ? live.metrics : (run?.final_metrics ?? {})
+  const metrics = useMemo(
+    () => Object.keys(live.metrics).length ? live.metrics : (run?.final_metrics ?? {}),
+    [live.metrics, run?.final_metrics],
+  )
   const chartData = useMemo(
     () => mergeMetricHistory(run?.snapshots ?? [], live.history),
     [run?.snapshots, live.history],

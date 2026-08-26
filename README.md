@@ -47,6 +47,7 @@ Requirements: Docker Engine with Compose v2.
 
 ```bash
 cp .env.example .env
+# Replace every change-me value in .env with a local secret.
 docker compose up --build --scale worker=4
 ```
 
@@ -54,9 +55,9 @@ Open:
 
 - Dashboard: <http://localhost:3000>
 - OpenAPI documentation: <http://localhost:8000/docs>
-- RabbitMQ management: <http://localhost:15672> (`job_platform` / `job_platform`)
+- RabbitMQ management: <http://localhost:15672> (credentials from `.env`)
 - Prometheus: <http://localhost:9090>
-- Grafana: <http://localhost:3001> (`admin` / `admin`)
+- Grafana: <http://localhost:3001> (credentials from `.env`)
 
 Stop the stack without deleting data:
 
@@ -120,6 +121,9 @@ Creating a Codespace from this repository automatically installs Docker, creates
 the complete Compose stack, starts four workers, waits for the API and frontend health checks, and
 opens the frontend. The forwarded ports are labeled in the VS Code **Ports** tab.
 
+Codespaces generates random PostgreSQL, RabbitMQ, and Grafana passwords for each new environment.
+The generated `.env` remains untracked.
+
 The startup terminal prints direct URLs for the frontend, FastAPI documentation, RabbitMQ,
 Grafana, and Prometheus. To print them again at any time:
 
@@ -167,6 +171,13 @@ pending = running = awaiting_retry = 0
 ## Responsible benchmarking
 
 The default deployment limits real runs to one million jobs. A one-hundred-million selection is simulation mode, clearly identified in the interface. Raising limits requires infrastructure sized for the resulting broker traffic, storage, network usage, and cost. Never point load generation at systems you do not own or have permission to test.
+
+## Security scope
+
+This is a local demonstration and reference implementation, not an internet-facing multi-tenant
+service. Ports bind to localhost, Codespaces ports remain private, and committed environment values
+are placeholders. Authentication, authorization, TLS termination, and abuse controls are required
+before exposing the API publicly. See [SECURITY.md](SECURITY.md).
 
 ## Project status
 

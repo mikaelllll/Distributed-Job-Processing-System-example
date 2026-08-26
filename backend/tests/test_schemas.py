@@ -6,9 +6,15 @@ from app.schemas import BenchmarkCreate
 
 
 def test_regular_benchmark_configuration() -> None:
-    benchmark = BenchmarkCreate(name="Load test", job_count=10_000)
+    benchmark = BenchmarkCreate(name="  Load test  ", job_count=10_000)
+    assert benchmark.name == "Load test"
     assert benchmark.mode == RunMode.benchmark
     assert benchmark.max_retries == 3
+
+
+def test_blank_name_is_rejected() -> None:
+    with pytest.raises(ValidationError):
+        BenchmarkCreate(name="   ", job_count=1)
 
 
 def test_large_real_run_is_rejected() -> None:

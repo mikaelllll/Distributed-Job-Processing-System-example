@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.models import RunMode, RunStatus
 
@@ -17,6 +17,14 @@ class BenchmarkCreate(BaseModel):
     duration_ms: int = Field(default=25, ge=0, le=60_000)
     failure_probability: float = Field(default=0, ge=0, le=1)
     max_retries: int = Field(default=3, ge=0, le=10)
+
+    @field_validator("name")
+    @classmethod
+    def normalize_name(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("Name must contain visible characters")
+        return normalized
 
     @model_validator(mode="after")
     def validate_large_run(self) -> "BenchmarkCreate":

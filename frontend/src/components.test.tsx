@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { detectBottleneck, mergeMetricHistory } from './components'
+import { detectBottleneck, mergeMetricHistory } from './metrics'
 
 describe('detectBottleneck', () => {
   it('reports missing worker capacity when jobs are queued', () => {
