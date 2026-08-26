@@ -97,6 +97,7 @@ async def stream_run(run_id: uuid.UUID, request: Request) -> StreamingResponse:
             while not await request.is_disconnected():
                 values = await redis.hgetall(metrics_key(str(run_id)))
                 payload = {key: _number(value) for key, value in values.items()}
+                payload["queued"] = payload.get("pending", payload.get("queued", 0))
                 payload["timestamp"] = datetime.now(UTC).isoformat()
                 yield f"event: metrics\ndata: {json.dumps(payload)}\n\n"
                 if payload.get("stream_finished") == 1:

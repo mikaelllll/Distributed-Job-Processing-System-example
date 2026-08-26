@@ -66,11 +66,8 @@ async def collect() -> None:
                     latency_count = int(numeric.get("latency_count", 0))
                     buckets = await redis.hgetall(f"run:{run.id}:latency_buckets")
                     queued, running, retrying, terminal = reconcile_in_flight_metrics(numeric)
-                    snapshot = {
-                        **{k: int(v) if v.is_integer() else v for k, v in numeric.items()},
-                        "queued": queued,
-                        "running": running,
-                        "retrying": retrying,
+                    derived = {
+                        "pending": queued,
                         "active_workers": workers,
                         "elapsed_seconds": round(elapsed, 2),
                         "throughput": round((completed + failed) / elapsed, 2),
@@ -83,6 +80,13 @@ async def collect() -> None:
                         "p50_ms": percentile(buckets, latency_count, 0.50),
                         "p95_ms": percentile(buckets, latency_count, 0.95),
                         "p99_ms": percentile(buckets, latency_count, 0.99),
+                    }
+                    snapshot = {
+                        **{k: int(v) if v.is_integer() else v for k, v in numeric.items()},
+                        **derived,
+                        "queued": queued,
+                        "running": running,
+                        "retrying": retrying,
                     }
                     production_finished = bool(int(numeric.get("production_finished", 0)))
                     submitted = int(numeric.get("submitted", 0))
@@ -100,12 +104,15 @@ async def collect() -> None:
                             retrying=0,
                             stream_finished=1,
                         )
+                        derived.update(pending=0, stream_finished=1)
                         run.status = RunStatus.completed
                         run.completed_at = datetime.now(UTC)
                         run.final_metrics = snapshot
                     await redis.hset(
                         key,
-                        mapping={k: v for k, v in snapshot.items() if isinstance(v, int | float)},
+                        # Never write worker-owned lifecycle counters here. Doing so can
+                        # overwrite increments that occur after HGETALL.
+                        mapping=derived,
                     )
                     session.add(MetricSnapshot(run_id=run.id, metrics=snapshot))
                 await session.commit()

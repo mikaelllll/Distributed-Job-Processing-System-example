@@ -25,6 +25,7 @@ export interface Metrics {
   requested?: number
   submitted?: number
   queued?: number
+  pending?: number
   running?: number
   completed?: number
   failed?: number
