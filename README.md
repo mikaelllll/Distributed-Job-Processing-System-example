@@ -13,12 +13,21 @@ You do not need to install Python, Node.js, Docker, PostgreSQL, Redis, or Rabbit
 1. Click **Open in GitHub Codespaces** above.
 2. Sign in to GitHub if requested.
 3. Choose **Create codespace**.
-4. Wait while the environment builds and starts the complete platform.
-5. When GitHub reports that port **3000** is available, select **Open in Browser**.
+4. If GitHub asks whether you trust the repository, select **Yes, I trust the authors**.
+5. Wait while the environment builds and starts the complete platform.
+6. Open the frontend URL printed in the terminal.
 
-The application URL ends in `-3000.app.github.dev`. Port 8000 is the backend API, so it is not the main website.
+The Codespace intentionally does not open the website automatically. Its startup can finish before the terminal becomes visible while the trust prompt is waiting, so the printed message may occasionally be missed.
 
-Startup creates private random credentials, launches four workers, waits for the API and frontend health checks, and prints direct links in the terminal. If the frontend does not open automatically, use the VS Code **Ports** tab and open port **3000**.
+If you do not see the URL:
+
+1. Open the VS Code **Ports** tab at the bottom.
+2. Find **Dispatch frontend** on port **3000**.
+3. Select its globe icon or **Open in Browser**.
+
+The frontend address ends in `-3000.app.github.dev`. Port 8000 is the backend API, not the main website.
+
+Startup creates private random credentials, launches four workers, waits for the API and frontend health checks, and prints direct service links in the terminal. The same links are printed again whenever you reconnect to the Codespace.
 
 See the [complete Codespaces guide](docs/codespaces.md) for startup behavior, service URLs, restarts, troubleshooting, and cleanup.
 
