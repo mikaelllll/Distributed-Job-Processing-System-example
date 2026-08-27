@@ -11,7 +11,7 @@
   "portsAttributes": {
     "3000": {
       "label": "Dispatch frontend",
-      "onAutoForward": "openBrowserOnce"
+      "onAutoForward": "notify"
     },
     "8000": {
       "label": "FastAPI",
@@ -35,7 +35,7 @@
   },
   "postCreateCommand": "bash .devcontainer/create-env.sh && bash .devcontainer/start-platform.sh",
   "postStartCommand": "bash .devcontainer/start-platform.sh",
-  "postAttachCommand": "bash .devcontainer/print-urls.sh --open-frontend",
+  "postAttachCommand": "bash .devcontainer/print-urls.sh",
   "waitFor": "postCreateCommand",
   "customizations": {
     "vscode": {
