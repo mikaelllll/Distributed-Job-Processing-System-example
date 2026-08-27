@@ -7,6 +7,8 @@ GitHub Codespaces is the recommended way to evaluate Dispatch. It provides an is
 1. Open the repository on GitHub.
 2. Select **Code**, then **Codespaces**.
 3. Select **Create codespace on main**.
+4. If GitHub asks whether you trust the repository, select **Yes, I trust the authors**.
+5. Wait for the automatic setup to finish.
 
 You can also use the direct link:
 
@@ -32,7 +34,23 @@ No Python installation prompt needs to be accepted. Application dependencies run
 
 ## Open the application
 
-Use the VS Code **Ports** tab and open port **3000**. The public-looking forwarded URL is private to the Codespace unless you deliberately change its visibility.
+The Codespace does not open the website automatically. When startup finishes, the terminal prints a line like:
+
+```text
+Dispatch frontend: https://your-codespace-name-3000.app.github.dev
+```
+
+Open that address to use the application.
+
+GitHub may wait for you to confirm **Yes, I trust the authors** before making the terminal available. If startup finishes while that prompt is waiting, its earlier terminal output may not be visible. This does not mean startup failed.
+
+If the URL is not visible:
+
+1. Open the VS Code **Ports** tab in the bottom panel.
+2. Find **Dispatch frontend** on port **3000**.
+3. Select the globe icon or right-click it and choose **Open in Browser**.
+
+The public-looking forwarded URL is private to the Codespace unless you deliberately change its visibility.
 
 | Port | Service |
 | ---: | --- |
@@ -42,7 +60,7 @@ Use the VS Code **Ports** tab and open port **3000**. The public-looking forward
 | 3001 | Grafana |
 | 9090 | Prometheus |
 
-The frontend URL ends in `-3000.app.github.dev`. Opening port 8000 at its root displays API information rather than the React application.
+The frontend URL ends in `-3000.app.github.dev`. Opening port 8000 at its root displays API information rather than the React application. The service links are also printed again automatically whenever you reconnect to the Codespace.
 
 ## Useful lifecycle commands
 
