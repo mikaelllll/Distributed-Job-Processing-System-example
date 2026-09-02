@@ -62,6 +62,20 @@ flowchart TD
 
 A run is created transactionally with an outbox event. The dispatcher publishes that event with broker confirmation. The load generator produces deterministic jobs at controlled concurrency, and workers process them using at-least-once delivery. Redis maintains fast live state while PostgreSQL preserves durable run definitions and final reports.
 
+## Key engineering decisions
+
+- **Separate systems by responsibility:** RabbitMQ provides durable job delivery, Redis serves fast-changing live metrics, and PostgreSQL remains the durable source of truth for run definitions and final reports.
+- **Use transactional outbox delivery:** run creation and its dispatch intent are committed together, avoiding a state where a run exists in PostgreSQL but its message was never published.
+- **Design for at-least-once processing:** workers acknowledge messages only after processing, and job accounting is idempotent so redelivery does not corrupt totals.
+- **Bound real workloads:** up to one million jobs are processed normally; the 100-million option uses an explicitly labelled simulation suitable for constrained Codespaces resources.
+
+## Trade-offs
+
+- At-least-once delivery improves resilience but requires idempotent consumers and duplicate-safe metrics.
+- Maintaining RabbitMQ, Redis, and PostgreSQL adds operational complexity compared with a single queue/database solution, but makes their distinct roles inspectable.
+- Redis enables responsive dashboards, while durable final reports must still be reconciled into PostgreSQL.
+- Docker Compose provides a reproducible demonstration, not the autoscaling, multi-host failover, or isolation of a production orchestrator.
+
 ## Technology
 
 | Area | Technology |
