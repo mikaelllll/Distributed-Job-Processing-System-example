@@ -6,6 +6,10 @@ Dispatch lets you create runs containing thousands to millions of jobs, distribu
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/mikaelllll/Distributed-Job-Processing-System-example?quickstart=1)
 
+## Application preview
+
+[![Dispatch distributed job dashboard](docs/images/application-preview.webp)](docs/images/application-preview.webp)
+
 ## Try it in GitHub Codespaces
 
 You do not need to install Python, Node.js, Docker, PostgreSQL, Redis, or RabbitMQ locally.
