@@ -4,7 +4,7 @@ A full-stack distributed job-processing platform built to demonstrate reliable a
 
 Dispatch lets you create runs containing thousands to millions of jobs, distribute them across a worker pool, and watch the system behave in real time. Completed runs remain available as historical reports with throughput, latency, errors, worker activity, and bottleneck analysis.
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/mikaelllll/Distributed-Job-Processing-System-example?quickstart=1)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/mikaelllll/Distributed-Job-Processing-System?quickstart=1)
 
 ## Application preview
 
