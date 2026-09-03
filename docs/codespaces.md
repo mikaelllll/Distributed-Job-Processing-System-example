@@ -12,7 +12,7 @@ GitHub Codespaces is the recommended way to evaluate Dispatch. It provides an is
 
 You can also use the direct link:
 
-[Open Dispatch in GitHub Codespaces](https://codespaces.new/mikaelllll/Distributed-Job-Processing-System-example?quickstart=1)
+[Open Dispatch in GitHub Codespaces](https://codespaces.new/mikaelllll/Distributed-Job-Processing-System?quickstart=1)
 
 The first creation takes longer because the development container and application images must be built. Later starts reuse cached layers when available.
 
