@@ -13,7 +13,7 @@ function Shell() {
   return <div className="shell">
     <header><Link className="brand" to="/"><span><Boxes size={21} /></span><div>DISPATCH<small>JOB OBSERVATORY</small></div></Link>
       <nav><NavLink to="/">Overview</NavLink><NavLink to="/new">New benchmark</NavLink></nav>
-      <a className="github" href="https://github.com/mikaelllll/Distributed-Job-Processing-System-example" target="_blank" rel="noreferrer"><Github size={18} /> Source</a>
+      <a className="github" href="https://github.com/mikaelllll/Distributed-Job-Processing-System" target="_blank" rel="noreferrer"><Github size={18} /> Source</a>
     </header>
     <main><Routes><Route path="/" element={<Overview />} /><Route path="/new" element={<CreateRun />} /><Route path="/runs/:id" element={<RunView />} /></Routes></main>
     <footer>Built to make distributed systems observable. <span>FastAPI · RabbitMQ · Redis · PostgreSQL · React</span></footer>
